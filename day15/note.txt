@@ -1,0 +1,44 @@
+一、使用os模块的基本功能：
+1、os.name获取操作系统名字，如果是posix，说明系统是Linux、Unix或Mac OS X，如果是nt，就是Windows系统。
+2、获取详细的系统信息，可以调用uname()函数。（注意uname()函数在Windows上不提供，也就是说，os模块的某些函数是跟操作系统相关的）。
+3、os.environ获取操作系统中定义的环境变量，全部保存在一个dict（字典）中。
+4、要获取某个环境变量的值，可以调用os.getenv()函数，如：os.getenv('PATH')。
+
+二、操作文件和目录
+操作文件和目录的函数一部分放在os模块中，一部分放在os.path模块中。
+
+1、把两个路径合成一个时，不要直接拼字符串，而要通过os.path.join()函数，这样可以正确处理不同操作系统的路径分隔符。在Linux/Unix/Mac下，os.path.join()返回这样的字符串：
+part-1/part-2
+
+而Windows下会返回这样的字符串：
+part-1\part-2
+
+2、同样的道理，要拆分路径时，也不要直接去拆字符串，而要通过os.path.split()函数，
+# 这样可以把一个路径拆分为两部分(元组形式返回)，后一部分总是最后级别的目录或文件名。
+
+3、复制文件的函数居然在os模块中不存在！原因是复制文件并非由操作系统提供的系统调用，可以通过读写文件操作完成文件的操作，shutil模块提供了copyfile()的函数，你还可以在shutil模块中找到很多实用函数，它们可以看做是os模块的补充。
+
+三、序列化
+把变量从内存中变成可存储或传输的过程称之为序列化，在Python中叫pickling，在其他语言中也被称之为serialization，marshalling，flattening等等。
+序列化之后，就可以把序列化后的内容写入磁盘，或者通过网络传输到别的机器上。
+反过来，把变量内容从序列化的对象重新读到内存里称之为反序列化，即unpickling。
+Python提供两个模块来实现序列化：cPickle和pickle。这两个模块功能是一样的，区别在于cPickle是C语言写的，速度快，pickle是纯Python写的，速度慢，跟cStringIO和StringIO一个道理。用的时候，先尝试导入cPickle，如果失败，再导入pickle。
+
+四、反序列化
+当我们要把对象从磁盘读到内存时，可以先把内容读到一个str，然后用pickle.loads()方法反序列化出对象，也可以直接用pickle.load()方法从一个file-like Object中直接反序列化出对象。
+
+注意：Pickle的问题和所有其他编程语言特有的序列化问题一样，就是它只能用于Python，并且可能不同版本的Python彼此都不兼容，因此，只能用Pickle保存那些不重要的数据，不能成功地反序列化也没关系。
+
+五、JSON
+JSON表示的对象就是标准的JavaScript语言的对象，JSON和Python内置的数据类型对应如下：
+JSON类型	Python类型
+{}			dict
+[]			list
+"string"	'str'或u'unicode'
+1234.56		int或float
+true/false	True/False
+null		None
+
+
+Python语言特定的序列化模块是pickle，但如果要把序列化搞得更通用、更符合Web标准，就可以使用json模块。
+json模块的dumps()和loads()函数是定义得非常好的接口的典范。当我们使用时，只需要传入一个必须的参数。但是，当默认的序列化或反序列机制不满足我们的要求时，我们又可以传入更多的参数来定制序列化或反序列化的规则，既做到了接口简单易用，又做到了充分的扩展性和灵活性。

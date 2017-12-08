@@ -1,0 +1,107 @@
+一、访问数据库
+1、使用SQLite
+SQLite是一种嵌入式数据库，它的数据库就是一个文件。由于SQLite本身是C写的，而且体积很小，所以，经常被集成到各种应用程序中，甚至在iOS和Android的App中都可以集成。
+Python就内置了SQLite3，所以，在Python中使用SQLite，不需要安装任何东西，直接使用。
+	1.1、
+	使用Python的DB-API时，只要搞清楚Connection和Cursor对象，打开后一定记得关闭，就可以放心地使用。
+	1.2
+	使用Cursor对象执行insert，update，delete语句时，执行结果由rowcount返回影响的行数，就可以拿到执行结果。
+	1.3、
+	使用Cursor对象执行select语句时，通过featchall()可以拿到结果集。结果集是一个list，每个元素都是一个tuple，对应一行记录。
+	1.4、
+	如果SQL语句带有参数，那么需要把参数按照位置传递给execute()方法，有几个?占位符就必须对应几个参数
+
+Python sqlite3 模块 API
+	以下是重要的 sqlite3 模块程序，可以满足您在 Python 程序中使用 SQLite 数据库的需求。如果您需要了解更多细节，请查看 Python sqlite3 模块的官方文档。
+	序号	API & 描述
+	1	sqlite3.connect(database [,timeout ,other optional arguments])
+	该 API 打开一个到 SQLite 数据库文件 database 的链接。您可以使用 ":memory:" 来在 RAM 中打开一个到 database 的数据库连接，而不是在磁盘上打开。如果数据库成功打开，则返回一个连接对象。
+	当一个数据库被多个连接访问，且其中一个修改了数据库，此时 SQLite 数据库被锁定，直到事务提交。timeout 参数表示连接等待锁定的持续时间，直到发生异常断开连接。timeout 参数默认是 5.0（5 秒）。
+	如果给定的数据库名称 filename 不存在，则该调用将创建一个数据库。如果您不想在当前目录中创建数据库，那么您可以指定带有路径的文件名，这样您就能在任意地方创建数据库。
+	2	connection.cursor([cursorClass])
+	该例程创建一个 cursor，将在 Python 数据库编程中用到。该方法接受一个单一的可选的参数 cursorClass。如果提供了该参数，则它必须是一个扩展自 sqlite3.Cursor 的自定义的 cursor 类。
+	3	cursor.execute(sql [, optional parameters])
+	该例程执行一个 SQL 语句。该 SQL 语句可以被参数化（即使用占位符代替 SQL 文本）。sqlite3 模块支持两种类型的占位符：问号和命名占位符（命名样式）。
+	例如：cursor.execute("insert into people values (?, ?)", (who, age))
+	4	connection.execute(sql [, optional parameters])
+	该例程是上面执行的由光标（cursor）对象提供的方法的快捷方式，它通过调用光标（cursor）方法创建了一个中间的光标对象，然后通过给定的参数调用光标的 execute 方法。
+	5	cursor.executemany(sql, seq_of_parameters)
+	该例程对 seq_of_parameters 中的所有参数或映射执行一个 SQL 命令。
+	6	connection.executemany(sql[, parameters])
+	该例程是一个由调用光标（cursor）方法创建的中间的光标对象的快捷方式，然后通过给定的参数调用光标的 executemany 方法。
+	7	cursor.executescript(sql_script)
+	该例程一旦接收到脚本，会执行多个 SQL 语句。它首先执行 COMMIT 语句，然后执行作为参数传入的 SQL 脚本。所有的 SQL 语句应该用分号（;）分隔。
+	8	connection.executescript(sql_script)
+	该例程是一个由调用光标（cursor）方法创建的中间的光标对象的快捷方式，然后通过给定的参数调用光标的 executescript 方法。
+	9	connection.total_changes()
+	该例程返回自数据库连接打开以来被修改、插入或删除的数据库总行数。
+	10	connection.commit()
+	该方法提交当前的事务。如果您未调用该方法，那么自您上一次调用 commit() 以来所做的任何动作对其他数据库连接来说是不可见的。
+	11	connection.rollback()
+	该方法回滚自上一次调用 commit() 以来对数据库所做的更改。
+	12	connection.close()
+	该方法关闭数据库连接。请注意，这不会自动调用 commit()。如果您之前未调用 commit() 方法，就直接关闭数据库连接，您所做的所有更改将全部丢失！
+	13	cursor.fetchone()
+	该方法获取查询结果集中的下一行，返回一个单一的序列，当没有更多可用的数据时，则返回 None。
+	14	cursor.fetchmany([size=cursor.arraysize])
+	该方法获取查询结果集中的下一行组，返回一个列表。当没有更多的可用的行时，则返回一个空的列表。该方法尝试获取由 size 参数指定的尽可能多的行。
+	15	cursor.fetchall()
+	该例程获取查询结果集中所有（剩余）的行，返回一个列表。当没有可用的行时，则返回一个空的列表。
+
+2、使用MySQL
+MySQL是Web世界中使用最广泛的数据库服务器。SQLite的特点是轻量级、可嵌入，但不能承受高并发访问，适合桌面和移动应用。而MySQL是为服务器端设计的数据库，能承受高并发访问，同时占用的内存也远远大于SQLite。
+此外，MySQL内部有多种数据库引擎，最常用的引擎是支持数据库事务的InnoDB。
+	2.1
+	安装MySQL驱动
+	由于MySQL服务器以独立的进程运行，并通过网络对外服务，所以，需要支持Python的MySQL驱动来连接到MySQL服务器。
+	目前，有两个MySQL驱动：
+	mysql-connector-python：是MySQL官方的纯Python驱动；
+	MySQL-python：是封装了MySQL C驱动的Python驱动。
+	2.2
+	Python的DB-API定义都是通用的，所以，操作MySQL的数据库代码和SQLite类似
+	MySQL的SQL占位符是%s；
+	通常我们在连接MySQL时传入use_unicode=True，让MySQL的DB-API始终返回Unicode。
+
+3、SQLAlchemy
+SQLAlchemy是Python世界中最广泛使用的ORM工具之一，它采用了类似于Java里Hibernate的数据映射模型， 而不是其他ORM框架采用的Active Record模型。
+SQLAlchemy分为两个部分，一个是最常用的ORM对象映射，另一个是核心的SQL expression。 第一个很好理解，纯粹的ORM，后面这个不是ORM，而是DBAPI的封装，通过一些sql表达式来避免了直接写sql。 使用SQLAlchemy则可以分为三种方式。
+  ● 使用ORM避免直接书写sql
+  ● 使用raw sql直接书写sql
+  ● 使用sql expression，通过SQLAlchemy的方法写sql表达式
+	3.1、安装
+	最简单的方式是通过pip安装: pip install SQLAlchemy
+	一般来讲我们要对某个底层数据库需要安装相应的驱动，比如我使用了mysql，那么需要安装python的mysql驱动，有很多种选择， 这里我选择了MySQLdb/MySQL-Python，这也是SQLAlchemy默认的。
+
+4、WSGI接口
+WSGI：Web Server Gateway Interface。
+WSGI接口定义非常简单，它只要求Web开发者实现一个函数，就可以响应HTTP请求。
+	1、application()函数就是符合WSGI标准的一个HTTP处理函数，它接收两个参数：
+		environ：一个包含所有HTTP请求信息的dict对象；
+		start_response：一个发送HTTP响应的函数。
+	start_response()函数接收两个参数，一个是HTTP响应码，一个是一组list表示的HTTP Header，每个Header用一个包含两个str的tuple表示。
+	通常情况下，都应该把Content-Type头发送给浏览器。其他很多常用的HTTP Header也应该发送。
+
+5、web框架
+	除了Flask，常见的Python Web框架还有：
+	Django：全能型Web框架；
+
+	web.py：一个小巧的Web框架；
+
+	Bottle：和Flask类似的Web框架；
+
+	Tornado：Facebook的开源异步Web框架。
+
+	5.1 Flask
+		可以在控制台使用一下命令进行启动服务：
+		set FLASK_APP=server.py (设置启动服务器运行文件)
+		flask run (启动)
+		当然可以直接python + 服务器文件运行启动
+	5.2 模板引擎
+		Flask通过render_template()函数来实现模板的渲染。和Web框架类似，Python的模板也有很多种。Flask默认支持的模板是jinja2。
+		一定要把模板放到正确的templates目录下。
+		在Jinja2模板中，用{{变量名}}表示一个需要替换的变量。很多时候，还需要循环、条件判断等指令语句，在Jinja2中，用{% ... %}表示指令。
+
+		除了Jinja2，常见的模板还有：
+		Mako：用<% ... %>和${xxx}的一个模板；
+		Cheetah：也是用<% ... %>和${xxx}的一个模板；
+		Django：Django是一站式框架，内置一个用{% ... %}和{{ xxx }}的模板。

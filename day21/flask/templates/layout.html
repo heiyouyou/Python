@@ -1,0 +1,11 @@
+<!doctype html>
+<title>jQuery Example</title>
+<link rel="stylesheet" type="text/css" href="/static/css/layout.css">
+<script type="text/javascript"
+  src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="/static/layout.js"></script>
+<script type="text/javascript">
+  var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
+<!-- 不能够注释这个指令 -->
+{% block body %}{% endblock %}
