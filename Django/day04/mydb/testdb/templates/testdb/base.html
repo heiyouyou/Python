@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>{% block title %} base html{% endblock %}</title>
+	{% load staticfiles %}
+	<link rel="stylesheet" type="text/css" href="{% static 'testdb/style.css'%}">
+</head>
+<body>
+	<div id=sidebar>
+		{% block sidebar%}
+			<ul>
+				<li><a href="/">Home</a></li>
+				<li><a href="/blog">Blog</a></li>
+			</ul>
+		{% endblock %}
+	</div>
+	{% autoescape off %}
+		<div id="content">
+			{% block content %}
+				base.....html
+			{% endblock %}
+		</div>
+	{% endautoescape %}
+</body>
+</html>

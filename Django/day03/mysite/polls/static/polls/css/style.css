@@ -1,0 +1,10 @@
+body{
+	color:#fff;
+	background: url(../images/bg.jpg) center no-repeat;
+	background-size:cover;
+}
+li a{
+	color:green;
+	font-size: 14px;
+	font-weight:bold;
+}

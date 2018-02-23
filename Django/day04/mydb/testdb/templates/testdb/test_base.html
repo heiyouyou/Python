@@ -1,0 +1,26 @@
+{% extends "testdb/base.html" %}
+
+{% load humanize %}
+{% block title %} My test_base {% endblock %}
+{% block sidebar %}
+	{{block.super}}
+	<p>这是继承了父类内容，额外增加的内容</p>
+{% endblock sidebar %}
+
+{% block content %}
+	this is test_base。。。html <br>	
+	hello {{name}}
+	hello {{not_name2}}
+	hello {{not_name}}
+	{% autoescape on %}
+		<h2>hello {{not_name}}</h2>
+		{{data|default:'<script type="text/javascript">alert(1)</script>'}}
+		<br>
+		{{r1.first_name}} {{r1.last_name}}发布了{{r1.article_set.count}}篇文章
+		{% for a in r1.article_set.all %}
+			----<a href="javascript:void(0);">{{a.headline}}{{a.pub_date}}</a>
+		{% endfor %}
+		<br>
+		加载第三方标签或者过滤器库----{{ 45000|intcomma }}
+	{% endautoescape %}
+{% endblock %}

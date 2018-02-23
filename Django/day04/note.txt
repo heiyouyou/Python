@@ -1,0 +1,275 @@
+一、创建model
+1、在models.py文件中以类的形式进行继承models.Model创建一个数据库映射的类。
+2、默认id主键Django会自行根据setting.py中的数据库配置引擎创建。
+	id = models.AutoField(primary_key=True)
+
+二、字段类型与字段的参数配置
+1、字段类型：
+	CharField（字符类）
+	IntegerField（整形类）
+	DateField（日期类）
+	DateTimeField（日期时间类）
+	BinaryField（二进制数据类）
+	BigIntegerField（大整形类）
+	BooleanField（布尔类）
+	DecimalField（精度数据类）
+2、字段类型的常用可选项参数
+	null = False，指定是否为NULL值
+	blank = False，指定是否可以为空
+	choice = 二维元组或者列表，指定字段的可选值范围
+	如：
+	class Person(models.Model):
+	    SHIRT_SIZES = (
+	        ('S', 'Small'),
+	        ('M', 'Medium'),
+	        ('L', 'Large'),
+	    )
+	    name = models.CharField(max_length=60)
+	    shirt_size = models.CharField(max_length=1, choices=SHIRT_SIZES)
+	default 指定字段的默认值
+	help_text 帮助性提示文字
+	primary_key 指定某字段是否为主键，默认Django自动创建主键
+	一般主键的值只可读，如果要改变主键的值，只能在现有的对象上改变，并保存到数据库中，但是实际上只是添加一条数据而已。
+	unique 指定字段的值在表中是否为唯一值
+
+三、Django提供的关系模型
+1、Many-to-one（多对一）
+	前提是model建立在django.db.models.ForeignKey的方法上，即是建立外键约束的关系。
+	如：
+	from django.db import models
+
+	class Manufacturer(models.Model):
+	    # ...
+	    pass
+
+	class Car(models.Model):
+	    manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE)
+	    # ...
+
+	models.ForeignKey(有关系的模型类,on_delete,**options)
+	注意：
+		1.建立了外键关联的字段，必须在主表中已经存在该关联数据（即是save()），否则报错。
+		2.主表数据删除，从表数据也会被删除，因为默认设置了on_delete = CASCADE
+
+	可以使用主表的对象对从表进行数据的查询、添加，更新，删除，如：
+	r.article_set.create() 添加数据
+	r.article_set.all() 查询与r相关的所有article数据
+	r.article_set.count() 统计所有与r相关的article总数
+	r.article_set.filter() 过滤出指定条件的article数据
+	r.delete()
+
+2、Many-to-many（多对多）
+	以ManyToManyField建立起model与model之间的多对多关系，会在数据库中自动创建出两个model之间的公共表（其中的一些字段会与另外两个model建立起ForeignKey的关系），如：
+	class Publication(models.Model):
+		title = models.CharField(max_length=100)
+
+		def __unicode__(self):
+			return self.title
+
+		class Meta:
+			ordering = ('title',)
+
+	class Articles(models.Model):
+		headline = models.CharField(max_length=100)
+		publications = models.ManyToManyField(Publication)
+
+		def __unicode__(self):
+			return self.headline
+
+		class Meta:
+			ordering = ('headline',)
+
+	添加多对多关系的程序示例：
+	>>> a2 = Articles(headline='NASA uses Python')
+	>>> a2.save()
+	>>> a2.publications.add(p1, p2)
+	>>> a2.publications.add(p3)
+
+	自定义的多对多关系模型：
+	通过through字段指明创建一个中间表，不使用Django自动创建的中间表。
+	如：
+	class Person(models.Model):
+		first_name = models.CharField(max_length = 30)
+		last_name = models.CharField(max_length = 30)
+
+	class Group(models.Model):
+		name = models.CharField(max_length=128)
+		members = models.ManyToManyField(Person,through='Membership')
+
+		def __unicode__(self):
+			return self.name
+
+	class Membership(models.Model):
+		person = models.ForeignKey(Person,on_delete=models.CASCADE)
+		group = models.ForeignKey(Group,on_delete=models.CASCADE)
+		date_joined = models.DateField()
+		invite_reason = models.CharField(max_length=64)
+
+	注意：
+		1.建立了多对多关系的两个model之间的表，互相删除己方的数据，都不会造成对方的数据影响，只会影响到建立了ForeignKey的中间表的数据。
+		2.任意一边可以调用remove(x)方法进行移除与某个模型的数据指定关系
+		3.任意一边可以调用clear()方法清除与之相关的某个模型数据的所有关系
+		4.通过through定义的多对多关系模型，是无法像普通的多对多关系模型使用add()或者remove(),甚至赋值的形式操作关系数据，只能通过中间模型进行操作。
+
+
+
+3、One-to-one（一对一）
+	一对一关系的建立是以OneToOneField进行两个model之间的关系指定，如：
+	class Place(models.Model):
+		name = models.CharField(max_length=50)
+		address = models.CharField(max_length=80)
+		def __unicode__(self):
+			return "%s the place" % self.name
+
+	class Restaurant(models.Model):
+		place = models.OneToOneField(Place,on_delete=models.CASCADE,primary_key=True)
+		serves_hot_dogs = models.BooleanField(default=False)
+		serves_pizza_dogs = models.BooleanField(default=False)
+
+		def __unicode__(self):
+			return "%s the restaurant" % self.place.name
+
+	class Waiter(models.Model):
+		restaurant = models.ForeignKey(Restaurant,on_delete=models.CASCADE)
+		name = models.CharField(max_length=50)
+
+		def __unicode__(self):
+			return "%s the waiter at %s" % (self.name,self.restaurant)
+
+	其他的查询、更新、删除与其他几种关系的操作一致。
+
+
+四、Templates
+1、视图配置与查找
+setting.py中的TEMPLATES可以定义多个模板系统；
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+    {
+        'BACKEND': 'django.template.backends.jinja2.Jinja2',
+        'DIRS': [
+            '/home/html/jinja2',
+        ],
+    }
+]
+
+其中DIRS和APP_DIRS两个配置项至少所有template engine都有的。
+注意：
+	1.通过select_template()或者get_template()方法查找视图文件，是由上往下查找的，即是从DIRS定义的目录查找，查找不到再从APP_DIRS的应用目录的templates目录下查找。
+2、语法
+	1.内置的常用过滤器
+		{值|过滤器名称:接受的额外参数}
+		date：{{my_date}}===>{{ my_date|date:"Y-m-d" }}===>{{ my_date|date:'D d M Y'}}===>{{my_date|date:"SHORT_DATE_FORMAT"}}===>{{my_date|date:"SHORT_DATETIME_FORMAT"}}===>{{my_date|date:"DATE_FORMAT"}}===>{{my_date|date:"DATETIME_FORMAT"}}<br>
+		default：{{nothing|default:'nothing...'}}<br>
+		length：{{value|length}}----{{list|length}}<br>
+		filesizeformat：{{filesize|filesizeformat}}<br>
+		add：{{filesize}}===>{{filesize|add:2}}-----{{filesize}}===>{{filesize|add:'3'}}-----{{list|add:list}}<br>
+		capfirst：{{data2|capfirst}}<br>
+		cut：{{"String with spaces"|cut:" "}}<br>
+	2.内置的常用指令标签
+		1.for循环
+			例：
+			<ul>
+				{% for athlete in athlete_list %}
+					<li>{{athlete.name}}---{{athlete.age}}---{{athlete.job}}</li>
+				{% endfor %}
+			</ul>
+		2.if,elif,and else 语句
+			例：
+			{% if athlete_list %}
+				Number of athletes: {{ athlete_list|length }}
+			{% elif athlete_in_locker_room_list %}
+				Athletes should be out the locker room soon!
+			{% else %}
+				No athletes
+			{% endif %}
+
+			{% if athlete_lists|length > 3 %}
+				{% for athlete in athlete_list %}
+					<p>{{athlete.name}}---{{athlete.age}}---{{athlete.job}}</p>
+				{% endfor %}
+			{% else %}
+				 Athlete: {{ athlete_list.0.name }}---{{ athlete_list.1.name }}---{{ athlete_list.2.name }}---{{ athlete_list.3.name }}---
+			{% endif %}
+			注意：
+			2.1 如果判断语句中使用过滤器，要注意与比较运算符空格的隔开
+			2.2 对于列表中字典类型的数据可以通过 列表变量.索引.属性的格式进行获取	
+
+	3.注解（注释）
+		单行注释：{# 注释的内容 #}
+		多行注释：{% comment %} 注释的内容 {% endcomment %}
+		注意：
+		3.1 单行注释中不能写入其他指令标签，否则注释无效，但是多行注释是有效的。
+		3.2 多行注释或者单行注释不能多重内嵌，否则报错或者无效。
+
+	4.模板的继承
+		4.1 模板的继承使用指令标签 {% extends '基础模板' %}，如：{% extends 'testdb/base.html' %}
+		4.2 在基础模板文件base.html中，将需要重写或者覆盖的内容区域使用指令标签 {% block name %}....{% endblock %}进行包裹，如：
+		<div id=sidebar>
+			{% block sidebar%}
+				<ul>
+					<li><a href="/">Home</a></li>
+					<li><a href="/blog">Blog</a></li>
+				</ul>
+			{% endblock %}
+		</div>
+		<div id="content">
+			{% block content %}
+				base.....html
+			{% endblock %}
+		</div>
+		注意：
+			1、字模版视图必须通过{% extends %}标签进行继承，并且一个视图只能有一个，并至于最顶部。
+			2、如果只想在父模板的内容上继承下来并且增加额外的内容可以，使用{{block.super}}变量进行获取解析，再添加。
+			3、为了增加可读性，可以给block指令标签的结束标签增加相同的名字，如：{% block content%}...{% endblock content %}。
+			4、在同一个模板文件中，不能够出现多个同名的 block 指令标签。
+
+	5.模板的HTML转义与安全问题
+		5.1 默认Django框架在模板中使用{{}}进行变量数据的输出时，会进行安全转义，防止xss的攻击。
+		5.2 可以按照需要自行关闭自动转义的功能，方法如：
+			1、对于单个变量的数据可以使用过滤器safe进行，确认数据为安全，既不需要转义，如：{{value|safe}}
+			2、块级的内容取消自动转义功能，使用标签{% autoescape off %}...{% endautoescape %}如：
+			 	{% autoescape off %}
+					<div id="content">
+						{% block content %}
+							base.....html
+						{% endblock %}
+					</div>
+				{% endautoescape %}
+			3、如果子类继承了父类模板，其也会继承是否自动转义的功能。
+			4、autoescape 标签可以多重内嵌使用，如：
+				{% autoescape off %}
+				    This will not be auto-escaped: {{ data }}.
+
+				    Nor this: {{ other_data }}
+				    {% autoescape on %}
+				        Auto-escaping applies again: {{ name }}
+				    {% endautoescape %}
+				{% endautoescape %}
+			5、使用转义过滤器并不会影响{% autoescape off %}...{% endautoescape %}的作用。
+			6、针对一些需要传入字符串参数的过滤器，如果字符串不是安全字符，{{}}格式符是不对它进行转义的,
+			如：
+				data:{{data|default:'<script type="text/javascript">alert(1)</script>'}}
+
+	6.模板中方法的调用
+		由于模板与视图关系密切，故在模板中可以使用一些像对象调用方法或者属性的语法，同样也可以使用像“ORM”模式的方法对数据库进行简单的操作，如：
+		{{r1.first_name}} {{r1.last_name}}发布了{{r1.article_set.count}}篇文章
+		{% for a in r1.article_set.all %}
+			----<a href="javascript:void(0);">{{a.headline}}{{a.pub_date}}</a>
+		{% endfor %}
+		注意：本来模板只是用来渲染和解析数据的，对于大量数据的获取和查询不应该放在这里处理，而已在view中处理。
+	7.自定义标签或者过滤器库
+		7.1 需要加载第三方（包括自定义）的标签库或者过滤器库时，需要在setting.py文件中的INSTALLED_APPS配置项进行注册，然后在template通过标签{% load 库名%}加载，方可使用
+		7.2 注意加载第三方（包括自定义）的标签库或者过滤器库只能在当前template中使用，对于子类继承了父类的情况，在子类中的template也是不能使用的，需要重新加载一次。
+		7.3 加载多个库，可以使用空格隔开。

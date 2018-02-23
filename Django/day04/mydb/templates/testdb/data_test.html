@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	dirs---{{data_test}}
+	{# this is comments #}
+	<br>
+	{{data_test|title}}
+	{# title过滤器可以使得英文首字母大写 #}
+	<br>
+	{% for x in list %}
+		{% cycle 'odd_num' 'even_num' %}
+		{{x}}
+		{% cycle 'odd' 'even' %}
+		<br>
+	{% endfor%}
+	<br>
+	<h2>内置的常用过滤器：</h2>
+	date：{{my_date}}===>{{ my_date|date:"Y-m-d" }}===>{{ my_date|date:'D d M Y'}}===>{{my_date|date:"SHORT_DATE_FORMAT"}}===>{{my_date|date:"SHORT_DATETIME_FORMAT"}}===>{{my_date|date:"DATE_FORMAT"}}===>{{my_date|date:"DATETIME_FORMAT"}}<br>
+	default：{{nothing|default:'nothing...'}}<br>
+	length：{{value|length}}----{{list|length}}<br>
+	filesizeformat：{{filesize|filesizeformat}}<br>
+	add：{{filesize}}===>{{filesize|add:2}}-----{{filesize}}===>{{filesize|add:'3'}}-----{{list|add:list}}<br>
+	capfirst：{{data2|capfirst}}<br>
+	cut：{{"String with spaces"|cut:" "}}<br>
+	<h2>内置的常用指令标签：</h2>
+	for：<br>
+	<ul>
+		{% for athlete in athlete_list %}
+			<li>{{athlete.name}}---{{athlete.age}}---{{athlete.job}}</li>
+		{% endfor %}
+	</ul>
+	if,elif,and else <br>
+	{% if athlete_list %}
+		Number of athletes: {{ athlete_list|length }}
+	{% elif athlete_in_locker_room_list %}
+		Athletes should be out the locker room soon!
+	{% else %}
+		No athletes
+	{% endif %}<br>
+	{% if athlete_lists|length > 3 %}
+		{% for athlete in athlete_list %}
+			<p>{{athlete.name}}---{{athlete.age}}---{{athlete.job}}</p>
+		{% endfor %}
+	{% else %}
+		 Athlete: {{ athlete_list.0.name }}---{{ athlete_list.1.name }}---{{ athlete_list.2.name }}---{{ athlete_list.3.name }}---
+	{% endif %}
+
+	<h2>模板的注解：</h2>
+	{# {% if athlete_lists|length > 3 %}
+			{% for athlete in athlete_list %}
+				<p>{{athlete.name}}---{{athlete.age}}---{{athlete.job}}</p>
+			{% endfor %}
+		{% else %}
+			 Athlete: {{ athlete_list.0.name }}---{{ athlete_list.1.name }}---{{ athlete_list.2.name }}---{{ athlete_list.3.name }}---
+		{% endif %} #}<br>
+	{# title过滤器可以 {# 。。。 #} 使得英文首字母大写 #}
+	{% comment %}
+		这是多行注释
+		这是多行注释
+		这是多行注释
+		这是多行注释
+		只能在后端开发人员看到
+
+		{% if athlete_lists|length > 3 %}
+			{% for athlete in athlete_list %}
+				<p>{{athlete.name}}---{{athlete.age}}---{{athlete.job}}</p>
+			{% endfor %}
+		{% else %}
+			 Athlete: {{ athlete_list.0.name }}---{{ athlete_list.1.name }}---{{ athlete_list.2.name }}---{{ athlete_list.3.name }}---
+		{% endif %}
+	{% endcomment %}
+	{% comment %}
+		多行注释不能内嵌
+	{% endcomment %}
+</body>
+</html>

@@ -1,0 +1,95 @@
+一、创建项目
+python-admin startproject mysite(项目名称)
+
+二、运行项目
+python manage.py runserver 
+默认在 127.0.0.1:8000 地址下运行
+可以通过 python manage.py runserver 8080 改变访问的端口
+
+三、创建应用程序(App)
+确保应用程序与manage.py 同一目录下
+python manage.py startapp polls(应用名) 
+
+四、初始化应用的Model
+python manage.py makemigrations polls
+注意：每次创建一个新的model都要运行该条命令
+
+五、迁移应用的Model成对应的sql语句
+python manage.py slqmigrate polls 0001(xxxx_initial.py的序号)
+该步骤并不是必须的，只是用来格式化xxxx_initial.py中的程序成对应的sql语句
+
+六、迁移应用的Model对应数据库中的表
+python manage.py migrate
+注意：每次创建一个新的model都要运行该条命令
+
+七、在命令行窗口进行数据库增删查改操作
+第一步先进入项目的命令窗口控制台：
+python manage.py shell
+第二步就是导入相关db的操作包，进行db的增删查改
+
+八、使用Django内置的管理系统进行创建用户和登录系统
+创建用户：python manage.py createsuperuser
+登录地址：http://127.0.0.1:8000/admin/
+
+九、解决Django框架中文显示和输入的问题
+显示：
+在settings.py文件中更改配置LANGUAGE_CODE成'zh-Hans',和MIDDLEWARE_CLASSES增加'django.middleware.locale.LocaleMiddleware'模块既可以在admin管理界面显示中文
+
+输入：
+1.用__unicode__函数代替__str__
+	原先写的模型代码中的方法用提　def __str__(self): 这个是旧版本中用的方法，在Django　0.96以后的版本中，应该换成
+	def __unicode__(self):
+	这样就解决了字符串传递时出错的问题，统一编码为Unicode字符串。
+	class FatherMenu(models.Model):
+	    ···
+	    def __unicode__(self):
+	        return self.title
+2.使用sefdefaultencoding函数
+	# _*_ coding:utf-8 _*_
+	from __future__ import unicode_literals
+	from django.db import models
+	from django.core.urlresolvers import reverse 
+	# Create your models here.
+
+	import sys
+	reload(sys)
+	sys.setdefaultencoding('utf-8')
+
+	class FatherMenu(models.Model):
+		pass
+
+十、Django处理响应和视图模板的问题
+1、一定要用return语句返回响应头对象HttpResponse()
+2、视图文件（即是html文件）一定要放在新建的templates文件夹中，不管子目录有多少
+4、视图文件存放在对应应用目录下的templates文件夹中，并且只能改app应用可见
+5、如果是直接在工程下创建templates目录，则该目录下的所有视图文件对于所有的应用可见，同时需要在setting.py文件中配置TEMPLATES>>DIRS选项为：[os.path.join(BASE_DIR,'templates')]，这样所有应用方可访问这个目录下的视图文件（注意不是配置TMEPLATE_DIRS）
+6、可以使用{% url url名称 参数 %}进行配置a链接的跳转地址，达到高度耦合可维护性（参考urls.py中的url映射），其中参数项可以省略。
+注意：当对urls.py配置了app_name时，必须通过命名空间访问，否则将报错
+
+十一、Django处理表单提交数据、ajax提交数据
+1、进行表单提交数据时需要在form表单内使用{% csrf_token %}指令方可解决跨域的问题。
+2、reverse(viename,kwargs=None)与视图模板中的{% url %}指令是相同的效果，都是用于格式化url路劲。
+3、vote{{某个字段值|pluralize}}对指令之前的字符(vote)进行复数变化处理
+4、针对两种类型的页面：列表形式的大量数据页面和具体某个数据的详细页面可以使用ListView和DetailView这两个generic类进行对视图函数重写成类，以类的形式进行书写相关逻辑。
+
+十二、Django的自动化测试机制
+第一步：在tests.py文件中创建继承了django.test.TestCase类的子类
+第二步：在子类中创建以test开头的方法进行测试用例
+第三步：使用self.client.get(path)模拟客户端请求服务端，进行相关功能测试
+第三步：运行命令行，python manage.py test polls(某个应用名)，会自动创建一个临时数据库进行测试
+注意：
+1、一个测试类对应一个模型或者视图
+2、每一个测试方法对应着一个测试条件
+3、测试方法的命名尽可能语义化
+
+十三、Django对于静态资源的处理
+1、在应用目录创建一个static静态资源目录
+2、为了区别其他应用的同名静态资源，故需要在static目录中以应用名为子目录进行命名空间的创建
+3、在模板视图中需要通过 {% load staticfiles %}加载静态资源的处理指令{% static '/polls/css/style.css' %}，也可以使用普通的url路径'/static/polls/images/test.jpg'来访问静态资源（不建议这种方式）。
+4、在浏览器地址栏访问静态资源的格式如：http://127.0.0.1:8000/static/polls/css/style.css。
+5、可以在setting.py中对STATIC_URL选项进行配置静态资源的起始路径。
+
+十四、Django自定义定制管理内置的admin网站的布局和样式
+1、可以在amdin.py文件中自定义一个继承了admin.ModelAdmin类的子类，通过字段fields或者fieldsets进行配置对应Model的显示顺序或者内容。
+2、可以在子类中通过一些重写父类的一些属性配置，达到定制化管理网站的目的，如：
+list_display、search_fields、list_filter、inlines

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>ajax处理</title>
+	<style type="text/css">
+		#box{
+			margin:20px auto;
+			width:300px;
+			text-align:center;
+		}
+		#ajax-btn{
+			display:inline-block;
+			background:#ccc;
+			padding:10px;
+			color:#000;
+			text-decoration:none;
+			border-radius: 5px;
+		}
+		#ajax-btn:focus{
+			background:#f0f0f0;
+		}
+		#ajax-data{
+			margin-top:10px;
+			color:red;
+		}
+	</style>
+</head>
+<body>
+	<div id="box">
+		<h1>ajax请求的处理</h1>
+		<a id="ajax-btn" href="javascript:void(0);">ajax请求</a>
+		<section id="ajax-data">
+			无数据
+		</section>
+	</div>
+	<script type="text/javascript">
+		//如：ajax({
+		//  url:'params',//必须
+		//  method:'post',//必须
+		//  async:true,//必须
+		//  data:{username:username,password:password},//必须
+		//  success:function(data){
+		//      console.log(data);
+		//  }
+		// })
+		function ajax(obj) {
+			var xhr = createXHR();//创建XHR对象
+			//通过使用JS随机字符串解决IE浏览器第二次默认获取缓存的问题
+			obj.url = obj.url + '?rand=' + Math.random();
+			obj.data = params(obj.data);//通过params()将名值对转换成字符串
+			//若是GET请求，则将数据加到url后面
+			if (obj.method === 'get') {
+				obj.url += obj.url.indexOf('?') == -1 ? '?' + obj.data : '&' + obj.data;
+			}
+			if (obj.async === true) {//true表示异步，false表示同步
+				//使用异步调用的时候，需要触发readystatechange 事件
+				xhr.onreadystatechange = function () {
+					if (xhr.readyState == 4) {//判断对象的状态是否交互完成
+						callback();//回调
+					}
+				};
+			}
+			//在使用XHR对象时，必须先调用open()方法，
+			//它接受三个参数：请求类型(get、post)、请求的URL和表示是否异步。
+			xhr.open(obj.method, obj.url, obj.async);
+			if (obj.method === 'post') {
+				//post方式需要自己设置http的请求头，来模仿表单提交。
+				//放在open方法之后，send方法之前。
+				xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+				xhr.send(obj.data);//post方式将数据放在send()方法里
+			} else {
+				xhr.send(null);//get方式则填null
+			}
+			if (obj.async === false) {  //同步
+				callback();
+			}
+			function callback() {
+				if (xhr.status == 200) {//判断http的交互是否成功，200表示成功
+					obj.success(xhr.responseText);//回调传递参数
+				} else {
+					console.log('获取数据错误！错误代号：' + xhr.status + '，错误信息：' + xhr.statusText);
+				}
+			}
+		}
+		//名值对转换为字符串
+		function params(data) {
+			var arr = [];
+			for (var i in data) {
+				//特殊字符传参产生的问题可以使用encodeURIComponent()进行编码处理
+				arr.push(encodeURIComponent(i) + '=' + encodeURIComponent(data[i]));
+			}
+			return arr.join('&');
+		}
+		// 创建ajax对象
+		function createXHR() {
+			if (window.XMLHttpRequest) {//IE7+、Firefox、Opera、Chrome 和Safari
+				return new XMLHttpRequest();
+			} else if (window.ActiveXObject) {//IE6 及以下
+				var versions = ['MSXML2.XMLHttp', 'Microsoft.XMLHTTP'];
+				for (var i = 0, len = versions.length; i < len; i++) {
+					try {
+						return new ActiveXObject(version[i]);
+						break;
+					} catch (e) {
+						//跳过
+					}
+				}
+			} else {
+				throw new Error('浏览器不支持XHR对象！');
+			}
+		}
+
+		function getCookie(name) {
+		    var cookieValue = null;
+		    if (document.cookie && document.cookie != '') {
+		        var cookies = document.cookie.split(';');
+		        for (var i = 0; i < cookies.length; i++) {
+		            var cookie = cookies[i].trim();
+		            // Does this cookie string begin with the name we want?
+		            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+		                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+		                break;
+		            }
+		        }
+		    }
+		    return cookieValue;
+		}
+		var csrftoken = getCookie('csrftoken');
+		console.log(csrftoken);
+		window.onload = function(){
+			var ajaxBtn = document.getElementById("ajax-btn");
+			var dataDom = document.getElementById("ajax-data")
+			ajaxBtn.onclick = ()=>{
+				ajax({
+					url:"./data",
+					method:"post",
+					async:true,
+					data:{
+						'user':'youyouhei',
+						'pwd':'123456',
+						// 'csrfmiddlewaretoken': '{{ csrf_token }}'
+						'csrfmiddlewaretoken': csrftoken
+					},
+					success(data){
+						console.log(data);
+						console.log(typeof data);
+						let json = JSON.parse(data);
+						console.log(json.msg,json.code);
+						dataDom.innerText = `${json.msg}----${json.code}`;
+					}
+				})
+			}
+		}
+	</script>
+</body>
+</html>

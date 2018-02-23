@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>主页</title>
+	{% load staticfiles %}
+	<link rel="stylesheet" type="text/css" href="{% static 'polls/css/style.css' %}">
+</head>
+<body>
+	{% if latest_question_list %}
+		<ul>
+			{% for question in latest_question_list %}
+				<li>
+					<!-- <a href="/polls/{{question.id}}/">{{question.question_text}}--{{question.pub_date}}</a> -->
+					detail:
+					<a href="{% url 'polls:detail' question.id %}">{{question.question_text}}--{{question.pub_date}}</a><br>
+					detail2:
+					<a href="{% url 'polls:detail2' question.id %}">{{question.question_text}}--{{question.pub_date}}</a>
+				</li>
+			{% endfor %}
+		</ul>
+	{% else %}
+		<p>No polls are available.</p>
+	{% endif %}
+	<h1>{{message}}--{{now|date}}</h1>
+	<div>
+		<h2>使用拼接的url路径</h2>
+		<image src="/static/polls/images/test.jpg"><br>
+		<h2>使用static指令拼接路径</h2>
+		<image src="{% static 'polls/images/test.jpg' %}">
+	</div>
+	<script type="text/javascript" src="{% static 'polls/js/style.js' %}"></script>
+</body>
+</html>
