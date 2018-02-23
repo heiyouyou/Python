@@ -1,0 +1,143 @@
+一、简介
+	Tornado是一个基于python实现的web框架和异步网络库，最初用来开发FriendFeed.通过使用非阻塞的网络I/O模型，Tornado可以抗住上千的并发连接，所以在长连接、websockets以及那些彼此长连接的应用来说变得很简单
+	Tornado can be roughly divided into four major components:
+	Tornado可以粗略地分成4个主要组件： 一个网路框架（包括RequestHandler，它是所有web应用和其他辅助类的父类）； 基于HTTP实现的客户端和服务端（HTTPServer和AsyncHTTPClient）；一个异步的网络库（IOLoop 和 IOStream），它控制HTTP网络模块，同时也可以被用来实现其他协议；一个协程库（tornado.gen），相对于直接使用回调函数，它提供了一个更直白的方式去写异步代码+
+	Tornado网络框架和HTTP服务器一起组成一个WSGI的全栈替代品。单独在WSGI容器中使用tornado网络框架或者tornaod http服务器，有一定的局限性，为了最大化的利用tornado的性能，推荐同时使用tornaod的网络框架和HTTP服务器。
+
+二、异步非阻塞I/O
+	实时网络需要一个可以长时间保持的连接和最小cpu消耗。对于传统同步网络服务器，这意味着每个用户都要去分配一个线程，代价是非常大的。为了追求并发连接的最小成本，Tornaod使用一个单线程的事件循环，这意味着所有的应用都必须是异步且非阻塞，一个时间点只有一个操作被执行。
+	异步和非阻塞有很强的关联性，经常被混淆，但请记住，他们是两回事儿。
+
+三、协程（Coroutines）
+
+四、Tornado的Web应用结构
+
+	一、低配版的Tornado web应用程序：
+		import tornado.ioloop
+		import tornado.web
+
+		class MainHandler(tornado.web.RequestHandler):
+		    def get(self):
+		        self.write("Hello, world")
+
+		def make_app():
+		    return tornado.web.Application([
+		        (r"/", MainHandler),
+		    ])
+
+		if __name__ == "__main__":
+		    app = make_app()
+		    app.listen(8888)
+		    tornado.ioloop.IOLoop.current().start()
+
+	二、Application 对象
+		Application对象负责全局配置，包括将请求映射到处理程序的路由选择表。
+		如：
+			app = tornado.web.Application([
+				tornado.web.url(r"/",MainHandler),
+				tornado.web.url(r"/story/([0-9]+)",StoryHandler,dict(db='db'),name="story"),
+				tornado.web.url(r"/form",MyFormHandler),
+				tornado.web.url(r"/myform",MyFormHandler),
+			])
+
+	三、RequestHandler的子类定义
+		1、子类继承来自class tornado.web.RequestHandler(application, request, **kwargs)这个基类时，至少要重写一个方法，其中get和post重写最为常用。
+
+		2、在处理程序中，调用诸如RequestHandler.render或RequestHandler.write的方法来产生响应。 render()通过名称加载模板，并用给定的参数渲染它。write()用于非基于模板的说输出;它接受字符串，字节和字典（字典将被编码为JSON）。
+
+		3、请求处理程序可以使用self.request来访问表示当前请求的对象。
+
+		4、解析get、post请求的参数可以分别使用self.get_query_argument和self.get_body_argument这样的方法，而获取表单上传文件的数据可以通过self.request.files。
+
+	四、重写RequestHanlder中的常用方法
+		一般整个请求调用的序列流程：
+		1.每一个请求都会创建一个新的RequestHandler对象。
+
+		2.使用Application配置中的初始化参数调用initialize()。 initialize只是保存传递给成员变量的参数;它可能不会产生任何输出或像send_error这样的调用方法。
+
+		3.prepare()被调用。这在所有处理子类共享的基类中最为有用，因为无论使用哪种HTTP方法，都会调用prepare。 准备可能会产生输出; 如果它调用完成（或重定向等），处理在这里停止。
+
+		4.其中一个HTTP方法被调用：get()，post()，put()等。如果URL正则表达式包含捕获组，则它们作为参数传递给此方法。
+
+		5.当请求完成时，调用on_finish()。对于同步处理程序，这是在get()等方法之后立即返回;于异步处理程序来说，它是在 finish()调用之后的。
+
+		一些最常用的重写方法包括：
+			write_error - 重写以实现自定义错误页面。
+			on_connection_close - 客户端断开连接时调用;应用程序可以选择检测这种情况，并停止进一步处理。请注意，没有保证可以及时发现封闭的连接。
+			get_current_user - 请参阅用户身份验证
+			get_user_locale - 返回当前用户使用的Locale对象
+			set_default_headers - 可以用来在响应中设置额外的headers（例如自定义的Server header）
+
+	五、错误处理
+		如果处理程序引发异常，Tornado将调用RequestHandler.write_error来生成错误页面。 tornado.web.HTTPError可用于生成指定的状态码;所有其他异常返回一个500状态码。
+
+	六、重定向
+		重定向的实现可以使用两种方式：RequestHandler.redirect和tornado.web.RedirectHandler
+		
+		RequestHandler.redirect(url, permanent=False, status=None)
+			默认返回的状态码是302  Found（临时），如果设置permanent=True，则会变成301 Moved Permanently（永久移动）
+
+		tornado.web.RedirectHandler
+			RedirectHandler可以在的Application路由表中配置重定向。默认是301 Moved Permanently（永久移动），与RequestHandler.redirect相反，要想使用RedirectHandler发送临时的重定向，可以通过设置Permanent = False添加到RedirectHandler初始化参数中。
+			
+	七、异步处理器
+		默认Tornado的处理器程序执行属于同步的，当调用get()或者post方法返回时，整个请求就被认为是结束了。
+		实现异步处理器或者异步程序可以有两种方式：
+			1.@tornado.gen.coroutine(协程装饰器)+yield 
+			2.tornado.web.asynchronous(异步装饰器)，该种方式，只有调用self.finish()才会结束整个请求。
+
+	八、模板语言
+		Tornado支持Python的任何模板语言，主要会使用到RequestHanlder.render这个方法进行模板的查找和读取（内部也是调用了类似于RequestHanlder.write方法）
+
+		1、配置模板
+			1.默认Tornado查找模板文件时是参考.py文件的同一个目录下进行的。
+			2.可以通过Application setting中配置 template_path 进行模板路径的设置查找，也可以针对不同请求处理器，进行重写 RequestHandler.get_template_path这个方法进行设置模板文件的路径。
+			3.默认模板的编译加载是被Tornado缓存起来的，如想每次都进行重新编译加载，可在application 的settings中设置 compiled_template_cache=False 或者 debug=True.
+			更多关于模板的配置项请参考此处API：http://www.tornadoweb.org/en/stable/web.html#tornado.web.Application.settings
+		
+		2、调试模式和自动重载模式
+			除了以上说的通过在Application的settins中进行配置debug=True进行可以使得应用进入调试开发模式外，也可以通过设置以下项达到不同的效果：
+			1.autoreload = True：应用程序将监视其源文件的更改，并在发生任何更改时重新加载自身。 这减少了在开发过程中手动重启服务器的需求。但是，某些故障（例如导入时的语法错误）仍然可能会以调试模式目前无法恢复的方式关闭服务器。
+			2.compiled_template_cache = False：模板不会被缓存。
+			3.static_hash_cache = False：静态文件哈希（由static_url函数使用）不会被缓存
+			4.serve_traceback = True：如果RequestHandler中的异常未被捕获，则会生成一个包含堆栈跟踪的错误页面。
+			注意：自动重载模式与HTTPServer的多进程模式不兼容。如果使用自动重载模式，则不得将HTTPServer.start的参数设置为1（或调用tornado.process.fork_processes）。
+
+		3、模板语法
+
+	九、静态资源的处理
+		静态资源的处理有两种方式：
+		1.在Application中对静态资源路径进行注册，如：
+		tornado.web.Application(handlers=[
+			# 处理静态资源路径
+			(r"/static/(.*)", tornado.web.StaticFileHandler, {"path": os.path.join(os.path.dirname(__file__),'static')}),
+		])	
+		2.在Application中配置static_url，如：
+			tornado.web.Application(handlers=[
+				(r"/index",IndexHandler)
+			],static_path=os.path.join(os.path.dirname(__file__),'static'))
+			此时在静态页面引入静态资源的形式如下：
+			<link rel="stylesheet" type="text/css" href="/static/common.css">
+			<script type="text/javascript" src="/static/js/index.js"></script>
+			有时我们需要更改静态资源的前缀，默认是 /static/ ,可以通过 static_url_prefix='/dist/' 更改静态资源访问的前缀，此时静态资源访问地址如下：
+			<link rel="stylesheet" type="text/css" href="/dist/common.css">
+			<script type="text/javascript" src="/dist/js/index.js"></script>
+		更多配置项查看API：http://www.tornadoweb.org/en/stable/web.html#tornado.web.Application.settings
+
+	十、身份验证和安全
+		1、传统cookie的获取和设置
+			使用get_cookie进行获取客户端cookie，使用set_cookie进行在客户端设置cookie，但是该种方法很容易就可以由客户端修改，并不能够起到安全作用。
+		2、安全cookie的获取和设置
+			Tornado提供了 set_secure_cookie 和 get_secure_cookie methods 这两个方法进行cookie的安全设置和获取，但是前提是必须在 Application 配置中使用 cookie_secret 该参数进行设置密钥
+
+			1.使用 set_secure_cookie 	设置的cookie，客户端上显示的cookie是经过加密后的值，后端程序通过 get_secure_cookie 获取得到的是未加密过的原始值
+
+			2.用于用户验证登录，可以使用self.current_user进行获取到当前登录用户的数据，进行验证是否通过，但是前提必须实现父类的self.get_current_user方法。当使用self.current_user时，默认会立即调用 self.get_current_user返回值，默认值是None。
+
+
+
+		3、第三方验证登录
+			Tornado提供了很多支持第三方站点登录验证的模块，其主要在tornado.auth中。
+
+		4、CSRF或者XSRF（跨站请求伪造）防护
+			开启跨站请求伪造防护，需要在Application配置中配置xsrf_cookies:True，并且针对其他站点的一切请求都必须要携带有正确的 _xsrf 令牌通行证

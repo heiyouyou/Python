@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>模板语法{{title}}</title>
+	<link rel="stylesheet" type="text/css" href="/static/common.css">
+	<link rel="stylesheet" type="text/css" href="/dist/css/index.css">
+</head>
+<body>
+	<h2>测试模板语法</h2>
+	<ul>
+		{% for item in items %}
+			<li>{{escape(item)}}---{{item}}--{{items[0]}}</li>
+		{% end %}
+	</ul>
+	<script type="text/javascript" src="/static/common.js"></script>
+	<script type="text/javascript" src="/static/js/index.js"></script>
+</body>
+</html>
