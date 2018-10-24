@@ -1,0 +1,6 @@
+一、sokectio使用要点
+	使用socketio的客户端或者服务端都可以进行自定义事件，如果客户端使用emit()自定义事件，则服务端需要监听该事件，进行处理器绑定；如果服务端使用emit()自定义事件，则客户端需要监听该事件。
+	内置提供的事件有：connection、disconnect、message、json。
+	更多API参考：https://flask-socketio.readthedocs.io/en/latest/
+	注意点：
+		1.可以通过配置 namespace 进行命名空间访问，默认是'/'下所有请求访问有效。

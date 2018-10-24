@@ -1,0 +1,10 @@
+1、使用flask-restful实现基于flask框架的RESTful API接口服务，文档参考：https://flask-restful.readthedocs.io/en/0.3.5/quickstart.html#
+	注意点：
+		1.decorators = [auth.login_required] #　可以通过decorators属性设置该资源类中的所有请求方法使用某些装饰器
+
+2、使用flask_httpauth可以实现多种方式的认证拦截，参考：http://www.bjhee.com/flask-ext9.html 和 http://www.voidcn.com/article/p-cdmcleph-bnx.html
+	注意点：
+		1.@auth.login_required 
+			该认证装饰器内部实际执行了@auth.verify_password装饰器内部的认证函数逻辑，所以需要重写@auth.verify_password该装饰器的逻辑
+		2.@auth.error_handler
+			默认认证不通过返回 'Unauthorized access' 文本，可以重写认证失败后返回的信息函数
